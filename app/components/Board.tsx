@@ -648,14 +648,14 @@ export default function Board() {
   }
 
   return (
-    <div className="min-h-screen pb-28 md:pb-10">
+    <div className="min-h-screen pb-24 md:pb-10">
 
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-8">
 
           <div>
             <div className="text-[11px] font-bold tracking-[0.22em] text-slate-500">
-              COMPANY BOARD
+              으랏차차 스토리 공연 보드
             </div>
 
             <div className="mt-0.5 text-sm font-semibold text-slate-900">
@@ -663,7 +663,7 @@ export default function Board() {
             </div>
           </div>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="grid w-full grid-cols-4 gap-1 sm:flex sm:w-auto sm:items-center">
             {([
               ['today', '오늘'],
               ['shows', '공연'],
@@ -674,7 +674,7 @@ export default function Board() {
                 <button
                   key={k}
                   onClick={() => goTop(k)}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold ${
+                  className={`rounded-md px-2 py-2.5 text-center text-sm font-semibold sm:px-4 ${
                     view === k
                       ? 'bg-slate-900 text-white'
                       : 'text-slate-600 hover:bg-slate-100'
@@ -795,39 +795,14 @@ export default function Board() {
           onClick={() =>
             setAddModal(true)
           }
-          className="fixed bottom-20 right-5 z-40 flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white shadow-soft md:bottom-8 md:right-8"
+          className="fixed bottom-6 right-5 z-40 flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white shadow-soft md:bottom-8 md:right-8"
         >
           <Plus size={18} />
           일정 / 할 일 추가
         </button>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white md:hidden">
-        <div className="grid grid-cols-4">
-
-          {([
-            ['today', '오늘'],
-            ['shows', '공연'],
-            ['tasks', '할 일'],
-            ['resources', '자료']
-          ] as [View, string][]).map(
-            ([k, label]) => (
-              <button
-                key={k}
-                onClick={() => goTop(k)}
-                className={`py-3 text-xs font-bold ${
-                  view === k
-                    ? 'text-slate-950'
-                    : 'text-slate-400'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          )}
-
-        </div>
-      </div>
+      
 
       {addModal && (
         <AddModal
