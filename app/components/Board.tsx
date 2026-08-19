@@ -14,7 +14,7 @@ import {
   Trash2,
   X
 } from 'lucide-react'
-import { sampleData, PEOPLE } from '@/app/data/sample'
+import { PEOPLE } from '@/app/data/sample'
 import { supabase } from '@/app/lib/supabase'
 import type {
   AppData,
@@ -111,7 +111,13 @@ function splitRoute(route?: string) {
 }
 
 export default function Board() {
-  const [data, setData] = useState<AppData>(sampleData)
+  const [data, setData] = useState<AppData>({
+    shows: [],
+    schedules: [],
+    tasks: [],
+    resources: [],
+    changes: []
+  })
   const [view, setView] = useState<View>('today')
   const [selectedShowId, setSelectedShowId] = useState<string | null>(null)
 
@@ -125,59 +131,48 @@ export default function Board() {
   const [editTarget, setEditTarget] = useState<EditTarget>(null)
   const [resourceShowId, setResourceShowId] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [remoteReady, setRemoteReady] = useState(false)
+
+  const loadRemoteData = async () => {
+    const { data: remoteRow, error } =
+      await supabase
+        .from('company_board_state')
+        .select('data')
+        .eq('id', 'main')
+        .single()
+
+    if (error) {
+      console.error('Supabase load failed:', error)
+      return false
+    }
+
+    const remoteData =
+      remoteRow?.data as AppData | undefined
+
+    if (remoteData) {
+      setData(remoteData)
+    }
+
+    setRemoteReady(true)
+    return true
+  }
 
   useEffect(() => {
     let active = true
 
-    const loadData = async () => {
-      const { data: remoteRow, error } =
-        await supabase
-          .from('company_board_state')
-          .select('data')
-          .eq('id', 'main')
-          .single()
+    const start = async () => {
+      const ok = await loadRemoteData()
 
-      if (!active) return
+      if (active) {
+        setLoaded(true)
 
-      if (!error && remoteRow?.data && Object.keys(remoteRow.data).length > 0) {
-        setData(remoteRow.data as AppData)
-      } else {
-        const saved =
-          localStorage.getItem('company-board-data-v2') ||
-          localStorage.getItem('company-board-data-v1')
-
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved)
-            setData(parsed)
-
-            await supabase
-              .from('company_board_state')
-              .upsert({
-                id: 'main',
-                data: parsed,
-                updated_at: new Date().toISOString()
-              })
-          } catch {
-            setData(sampleData)
-          }
-        } else {
-          setData(sampleData)
-
-          await supabase
-            .from('company_board_state')
-            .upsert({
-              id: 'main',
-              data: sampleData,
-              updated_at: new Date().toISOString()
-            })
+        if (!ok) {
+          setRemoteReady(false)
         }
       }
-
-      setLoaded(true)
     }
 
-    loadData()
+    start()
 
     return () => {
       active = false
@@ -185,25 +180,25 @@ export default function Board() {
   }, [])
 
   useEffect(() => {
-    if (!loaded) return
-
-    localStorage.setItem(
-      'company-board-data-v2',
-      JSON.stringify(data)
-    )
+    if (!loaded || !remoteReady) return
 
     const saveRemote = async () => {
-      await supabase
-        .from('company_board_state')
-        .upsert({
-          id: 'main',
-          data,
-          updated_at: new Date().toISOString()
-        })
+      const { error } =
+        await supabase
+          .from('company_board_state')
+          .upsert({
+            id: 'main',
+            data,
+            updated_at: new Date().toISOString()
+          })
+
+      if (error) {
+        console.error('Supabase save failed:', error)
+      }
     }
 
     saveRemote()
-  }, [data, loaded])
+  }, [data, loaded, remoteReady])
 
 
   useEffect(() => {
@@ -689,7 +684,13 @@ export default function Board() {
           </nav>
 
             <button
-              onClick={() => window.location.reload()}
+              onClick={async () => {
+                const ok = await loadRemoteData()
+
+                if (!ok) {
+                  alert('최신 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+                }
+              }}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               title="새로고침"
               aria-label="새로고침"
