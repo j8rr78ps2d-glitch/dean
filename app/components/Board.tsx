@@ -10,6 +10,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  RotateCcw,
   Trash2,
   X
 } from 'lucide-react'
@@ -663,7 +664,8 @@ export default function Board() {
             </div>
           </div>
 
-          <nav className="grid w-full grid-cols-4 gap-1 sm:flex sm:w-auto sm:items-center">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <nav className="grid min-w-0 flex-1 grid-cols-4 gap-1 sm:flex sm:w-auto sm:flex-none sm:items-center">
             {([
               ['today', '오늘'],
               ['shows', '공연'],
@@ -686,13 +688,17 @@ export default function Board() {
             )}
           </nav>
 
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center rounded-md border border-slate-200 px-2.5 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-            title="새로고침"
-          >
-            새로고침
-          </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              title="새로고침"
+              aria-label="새로고침"
+            >
+              <RotateCcw size={16} />
+            </button>
+          </div>
+
+
 
 
 
@@ -1895,7 +1901,7 @@ function ShowDetail({
                       className="shrink-0 text-slate-400"
                     />
 
-                    <span className="truncate">
+                    <span className="min-w-0 break-words">
                       {r.label}
                     </span>
 
@@ -2246,7 +2252,7 @@ function TasksView({
                   .map((t, i) => (
                     <div
                       key={t.id}
-                      className={`flex items-center justify-between gap-3 px-4 py-4 ${
+                      className={`flex min-w-0 items-center justify-between gap-3 px-4 py-4 ${
                         i
                           ? 'border-t border-slate-100'
                           : ''
@@ -2328,7 +2334,7 @@ function ResourcesView({
 
       </div>
 
-      <div className="grid gap-x-8 gap-y-8 md:grid-cols-2">
+      <div className="grid min-w-0 gap-x-8 gap-y-8 md:grid-cols-2">
 
         {activeShows.map(show => {
           const resources =
@@ -2337,7 +2343,7 @@ function ResourcesView({
             )
 
           return (
-            <section key={show.id}>
+            <section key={show.id} className="min-w-0">
 
               <div className="mb-3 flex items-center justify-between">
 
@@ -2357,7 +2363,7 @@ function ResourcesView({
 
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
 
                 {resources.length === 0 ? (
                   <Empty text="등록된 자료가 없습니다." />
@@ -2365,7 +2371,7 @@ function ResourcesView({
                   resources.map((r, i) => (
                     <div
                       key={r.id}
-                      className={`flex items-center justify-between gap-3 px-4 py-4 ${
+                      className={`flex min-w-0 items-center justify-between gap-3 px-4 py-4 ${
                         i
                           ? 'border-t border-slate-100'
                           : ''
@@ -2376,7 +2382,7 @@ function ResourcesView({
                         href={r.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex min-w-0 flex-1 items-center justify-between gap-3 font-bold hover:underline"
+                        className="flex min-w-0 flex-1 items-center justify-between gap-3 overflow-hidden font-bold hover:underline"
                       >
 
                         <div className="flex min-w-0 items-center gap-2">
@@ -2386,7 +2392,7 @@ function ResourcesView({
                             className="shrink-0 text-slate-400"
                           />
 
-                          <span className="truncate">
+                          <span className="min-w-0 break-words">
                             {r.label}
                           </span>
 
