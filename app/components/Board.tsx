@@ -686,6 +686,14 @@ export default function Board() {
             )}
           </nav>
 
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center justify-center rounded-md border border-slate-200 px-2.5 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            title="새로고침"
+          >
+            새로고침
+          </button>
+
 
 
         </div>
@@ -1172,23 +1180,6 @@ function TodayView({
 
         </section>
 
-        <Section title="변경사항">
-
-          {changes.length === 0 ? (
-            <Empty text="최근 변경사항이 없습니다." />
-          ) : (
-            changes.map((c, i) => (
-              <ChangeRow
-                key={c.id}
-                c={c}
-                showName={showMap[c.showId]?.name}
-                border={i > 0}
-              />
-            ))
-          )}
-
-        </Section>
-
         <Section title="다가오는 공연">
 
           {upcoming.length === 0 ? (
@@ -1243,6 +1234,23 @@ function TodayView({
                 </button>
               )
             })
+          )}
+
+        </Section>
+
+        <Section title="변경사항">
+
+          {changes.length === 0 ? (
+            <Empty text="최근 변경사항이 없습니다." />
+          ) : (
+            changes.map((c, i) => (
+              <ChangeRow
+                key={c.id}
+                c={c}
+                showName={showMap[c.showId]?.name}
+                border={i > 0}
+              />
+            ))
           )}
 
         </Section>
