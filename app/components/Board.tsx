@@ -499,6 +499,17 @@ export default function Board() {
     setShowEditor({ open: false })
   }
 
+  const saveShowMemo = (showId: string, memo: string) => {
+    setData(d => ({
+      ...d,
+      shows: d.shows.map(show =>
+        show.id === showId
+          ? { ...show, memo }
+          : show
+      )
+    }))
+  }
+
   const deleteShow = (id: string) => {
     const show = data.shows.find(s => s.id === id)
 
@@ -769,6 +780,7 @@ export default function Board() {
                   selectedShowId
                 )
               }
+              onSaveMemo={saveShowMemo}
             />
           )}
 
@@ -1559,7 +1571,8 @@ function ShowDetail({
   onEditShow,
   onDeleteShow,
   onEdit,
-  onAddResource
+  onAddResource,
+  onSaveMemo
 }: {
   data: AppData
   showId: string
@@ -1572,6 +1585,7 @@ function ShowDetail({
   onDeleteShow: () => void
   onEdit: (target: EditTarget) => void
   onAddResource: () => void
+  onSaveMemo: (showId: string, memo: string) => void
 }) {
   const show =
     data.shows.find(
@@ -1968,7 +1982,74 @@ function ShowDetail({
 
       </div>
 
+      <ShowMemoEditor
+        show={show}
+        onSave={onSaveMemo}
+      />
+
     </div>
+  )
+}
+
+function ShowMemoEditor({
+  show,
+  onSave
+}: {
+  show: Show
+  onSave: (showId: string, memo: string) => void
+}) {
+  const [memo, setMemo] = useState(show.memo || '')
+  const [savedMemo, setSavedMemo] = useState(show.memo || '')
+
+  useEffect(() => {
+    const next = show.memo || ''
+    setMemo(next)
+    setSavedMemo(next)
+  }, [show.id, show.memo])
+
+  const changed = memo !== savedMemo
+
+  const save = () => {
+    onSave(show.id, memo)
+    setSavedMemo(memo)
+  }
+
+  return (
+    <section className="mt-7">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-slate-950">
+          메모
+        </h2>
+
+        <span className="text-xs font-bold text-slate-400">
+          {changed ? '저장 전' : '저장됨'}
+        </span>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <textarea
+          value={memo}
+          onChange={e => setMemo(e.target.value)}
+          rows={14}
+          className="block min-h-[320px] w-full resize-y bg-white p-5 text-[15px] leading-7 outline-none"
+          placeholder="공연 관련 메모를 자유롭게 적어두세요."
+        />
+
+        <div className="flex justify-end border-t border-slate-100 px-4 py-3">
+          <button
+            onClick={save}
+            disabled={!changed}
+            className={`rounded-lg px-5 py-2.5 text-sm font-extrabold ${
+              changed
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-400'
+            }`}
+          >
+            저장
+          </button>
+        </div>
+      </div>
+    </section>
   )
 }
 
