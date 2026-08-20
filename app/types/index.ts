@@ -32,6 +32,7 @@ export interface Show {
   type: 'general' | 'tour'
   venue?: string
   tourInfo?: TourInfo
+  memo?: string
 }
 
 export interface ScheduleItem {
