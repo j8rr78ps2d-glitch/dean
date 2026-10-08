@@ -720,6 +720,16 @@ export default function Board() {
     setView(next)
   }
 
+  const copyBackup = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+      alert('현재 공연 보드 백업을 복사했습니다.')
+    } catch (error) {
+      console.error('Backup copy failed:', error)
+      alert('백업 복사에 실패했습니다.')
+    }
+  }
+
   return (
     <div className="min-h-screen pb-24 md:pb-10">
 
@@ -759,6 +769,14 @@ export default function Board() {
               )
             )}
           </nav>
+
+            <button
+              onClick={copyBackup}
+              className="hidden rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 sm:block"
+              title="현재 데이터 백업 복사"
+            >
+              백업 복사
+            </button>
 
             <button
               onClick={async () => {
