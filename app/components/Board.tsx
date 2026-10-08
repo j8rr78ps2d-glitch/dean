@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Check,
   ChevronLeft,
@@ -60,13 +60,42 @@ type EditTarget =
 
 function todayKey() {
   const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(d)
 }
 
 const TODAY = todayKey()
+const LOCAL_BACKUP_KEY = 'company-board-data-v2'
+
+function isAppData(value: unknown): value is AppData {
+  if (!value || typeof value !== 'object') return false
+
+  const candidate = value as Partial<AppData>
+  return ['shows', 'schedules', 'tasks', 'resources', 'changes']
+    .every(key => Array.isArray(candidate[key as keyof AppData]))
+}
+
+function readLocalBackup() {
+  if (typeof window === 'undefined') return null
+
+  for (const key of [LOCAL_BACKUP_KEY, 'company-board-data-v1']) {
+    try {
+      const raw = window.localStorage.getItem(key)
+      if (!raw) continue
+
+      const parsed: unknown = JSON.parse(raw)
+      if (isAppData(parsed)) return parsed
+    } catch (error) {
+      console.error('Local backup load failed:', error)
+    }
+  }
+
+  return null
+}
 
 function fmtDate(date: string) {
   const d = new Date(`${date}T00:00:00`)
@@ -132,28 +161,42 @@ export default function Board() {
   const [resourceShowId, setResourceShowId] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [remoteReady, setRemoteReady] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const lastRemoteJson = useRef<string | null>(null)
 
   const loadRemoteData = async () => {
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 8000)
     const { data: remoteRow, error } =
       await supabase
         .from('company_board_state')
         .select('data')
         .eq('id', 'main')
-        .single()
+        .abortSignal(controller.signal)
+        .maybeSingle()
+
+    window.clearTimeout(timeout)
 
     if (error) {
       console.error('Supabase load failed:', error)
+      setRemoteReady(false)
+      setSyncMessage('원격 저장소에 연결하지 못해 이 기기의 백업을 표시하고 있습니다. 원격 저장은 중지되었습니다.')
       return false
     }
 
     const remoteData =
       remoteRow?.data as AppData | undefined
 
-    if (remoteData) {
-      setData(remoteData)
+    if (!isAppData(remoteData)) {
+      setRemoteReady(false)
+      setSyncMessage('원격 데이터가 없거나 올바르지 않아 원격 저장을 중지했습니다.')
+      return false
     }
 
+    lastRemoteJson.current = JSON.stringify(remoteData)
+    setData(remoteData)
     setRemoteReady(true)
+    setSyncMessage(null)
     return true
   }
 
@@ -164,11 +207,12 @@ export default function Board() {
       const ok = await loadRemoteData()
 
       if (active) {
-        setLoaded(true)
-
         if (!ok) {
-          setRemoteReady(false)
+          const backup = readLocalBackup()
+          if (backup) setData(backup)
         }
+
+        setLoaded(true)
       }
     }
 
@@ -180,7 +224,20 @@ export default function Board() {
   }, [])
 
   useEffect(() => {
+    if (!loaded || typeof window === 'undefined') return
+
+    try {
+      window.localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(data))
+    } catch (error) {
+      console.error('Local backup save failed:', error)
+    }
+  }, [data, loaded])
+
+  useEffect(() => {
     if (!loaded || !remoteReady) return
+
+    const nextJson = JSON.stringify(data)
+    if (lastRemoteJson.current === nextJson) return
 
     const saveRemote = async () => {
       const { error } =
@@ -194,7 +251,12 @@ export default function Board() {
 
       if (error) {
         console.error('Supabase save failed:', error)
+        setRemoteReady(false)
+        setSyncMessage('원격 저장에 실패했습니다. 이 기기에는 백업했으며 원격 저장은 중지되었습니다.')
+        return
       }
+
+      lastRemoteJson.current = nextJson
     }
 
     saveRemote()
@@ -220,6 +282,10 @@ export default function Board() {
               payload.new?.data as AppData | undefined
 
             if (!next) return
+
+            if (!isAppData(next)) return
+
+            lastRemoteJson.current = JSON.stringify(next)
 
             setData(current => {
               const currentJson =
@@ -718,6 +784,12 @@ export default function Board() {
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-7 md:px-8 md:py-10">
+
+        {syncMessage && (
+          <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
+            {syncMessage}
+          </div>
+        )}
 
         {view === 'today' && (
           <TodayView
