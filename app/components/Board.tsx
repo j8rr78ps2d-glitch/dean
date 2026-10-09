@@ -97,6 +97,14 @@ function readLocalBackup() {
   return null
 }
 
+function hasBoardContent(data: AppData) {
+  return data.shows.length > 0 ||
+    data.schedules.length > 0 ||
+    data.tasks.length > 0 ||
+    data.resources.length > 0 ||
+    data.changes.length > 0
+}
+
 function fmtDate(date: string) {
   const d = new Date(`${date}T00:00:00`)
   return `${d.getMonth() + 1}/${d.getDate()}`
@@ -187,9 +195,37 @@ export default function Board() {
     const remoteData =
       remoteRow?.data as AppData | undefined
 
+    if (!remoteRow) {
+      const backup = readLocalBackup()
+
+      if (backup && hasBoardContent(backup)) {
+        const { error: restoreError } = await supabase
+          .from('company_board_state')
+          .insert({
+            id: 'main',
+            data: backup,
+            updated_at: new Date().toISOString()
+          })
+
+        if (!restoreError) {
+          lastRemoteJson.current = JSON.stringify(backup)
+          setData(backup)
+          setRemoteReady(true)
+          setSyncMessage(null)
+          return true
+        }
+
+        console.error('Supabase restore failed:', restoreError)
+      }
+
+      setRemoteReady(false)
+      setSyncMessage('원격 데이터가 없으며 이 기기에서 복구할 백업을 찾지 못했습니다.')
+      return false
+    }
+
     if (!isAppData(remoteData)) {
       setRemoteReady(false)
-      setSyncMessage('원격 데이터가 없거나 올바르지 않아 원격 저장을 중지했습니다.')
+      setSyncMessage('원격 데이터 형식이 올바르지 않아 원격 저장을 중지했습니다.')
       return false
     }
 
